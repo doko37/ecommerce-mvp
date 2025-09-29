@@ -6,7 +6,9 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors())
+app.use(cors({
+    origin: '*'
+}))
 app.use(express.json());
 app.use('/menu', require('./routes/menu'));
 app.use('/orders', require('./routes/order'));

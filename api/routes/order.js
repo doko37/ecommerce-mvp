@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
 const { DynamoDBDocumentClient, QueryCommand, PutCommand, DeleteCommand } = require("@aws-sdk/lib-dynamodb");
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const client = new DynamoDBClient({ region: process.env.AWS_REGION });
 const docClient = DynamoDBDocumentClient.from(client);
@@ -34,27 +35,47 @@ router.post('/', async (req, res) => {
     const order = req.body;
     console.log(order)
     try {
-        const { restaurantId } = req.query;
-        const { name, email, phone, time, items } = order;
+        // const { restaurantId } = req.query;
+        const { items } = order;
 
-        if (name == null || email == null || phone == null || time == null || items == null) {
-            return res.status(400).json({ error: "name, email, phone, time, and items are required" });
+        if(!items) {
+            return res.status(400).json({ error: "items are required" });
         }
+        // if (name == null || email == null || phone == null || time == null || items == null) {
+        //     return res.status(400).json({ error: "name, email, phone, time, and items are required" });
+        // }
 
-        if (!restaurantId) {
-            return res.status(400).json({ error: "restaurantId is required" });
-        }
+        // if (!restaurantId) {
+        //     return res.status(400).json({ error: "restaurantId is required" });
+        // }
 
-        const params = {
-            TableName: TABLE_NAME,
-            Item: {
-                restaurantId: restaurantId,
-                itemId: `ORDER#${Date.now()}`,
-                ...order
-            }
-        };
-        await docClient.send(new PutCommand(params));
-        res.status(201).json(order);
+        // const params = {
+        //     TableName: TABLE_NAME,
+        //     Item: {
+        //         restaurantId: restaurantId,
+        //         itemId: `ORDER#${Date.now()}`,
+        //         ...order
+        //     }
+        // };
+        const session = await stripe.checkout.sessions.create({
+            line_items: items.map(item => ({
+                price_data: {
+                    currency: 'nzd',
+                    product_data: {
+                        name: item.name,
+                        // images: [item.image], // Uncomment if you have image URLs
+                    },
+                    unit_amount: Math.round(item.price * 100), // Amount in cents
+                },
+                quantity: item.quantity
+            })),
+            mode: 'payment',
+            success_url: 'http://localhost:3000/success', // Replace with your actual success URL
+            cancel_url: 'http://localhost:3000/cancel',   // Replace with your actual cancel URL
+        });
+        console.log(session)
+
+        res.redirect(303, session.url);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

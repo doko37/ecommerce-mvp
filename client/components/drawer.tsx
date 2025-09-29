@@ -23,13 +23,12 @@ export default function CartDrawer() {
       alert("Your cart is empty.");
       return;
     }
-    if(!form.name || !form.email || !form.phone) {
-      alert("Please fill out all fields.");
-      return;
-    }
+    // if(!form.name || !form.email || !form.phone) {
+    //   alert("Please fill out all fields.");
+    //   return;
+    // }
     try {
       const response = await api.post('/orders', {
-        ...form,
         time: Date.now(),
         items: cartState.cart.map(item => ({
           itemId: item.itemId,
@@ -37,15 +36,9 @@ export default function CartDrawer() {
           price: item.price,
           quantity: item.quantity,
         })),
-      });
-      if(response.status === 201) {
-        alert("Order placed successfully!");
-        cartState.clearCart();
-        setForm({ name: '', email: '', phone: '' });
-        setOpen(false);
-      } else {
-        alert("Failed to place order. Please try again.");
-      }
+      }).then(res => {
+        console.log(res.data)
+      }).catch(err => console.error(err));
     } catch (error) {
       console.error("Error placing order:", error);
       alert("An error occurred while placing your order. Please try again.");
@@ -99,14 +92,14 @@ export default function CartDrawer() {
           <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '1em', fontWeight: 'bold', marginBottom: '2em' }}>
             Total: ${cartState.cart.reduce((total, item) => total + item.price * item.quantity, 0).toFixed(2)}
           </div>
-          <TextField label="Name" size="small" style={{ margin: '0.25em 0', width: '100%' }} value={form.name} onChange={e => setForm(prev => ({...prev, name: e.target.value}))} />
+          {/* <TextField label="Name" size="small" style={{ margin: '0.25em 0', width: '100%' }} value={form.name} onChange={e => setForm(prev => ({...prev, name: e.target.value}))} />
           <TextField label="Email" size="small" style={{ margin: '0.25em 0', width: '100%' }} value={form.email} onChange={e => setForm(prev => ({...prev, email: e.target.value}))} />
-          <TextField label="Phone Number" size="small" style={{ margin: '0.25em 0', width: '100%' }} value={form.phone} onChange={e => setForm(prev => ({...prev, phone: e.target.value}))} />
+          <TextField label="Phone Number" size="small" style={{ margin: '0.25em 0', width: '100%' }} value={form.phone} onChange={e => setForm(prev => ({...prev, phone: e.target.value}))} /> */}
           <Button
             variant="contained"
             color="primary"
             fullWidth
-            style={{ marginTop: '1em', padding: '0.75em' }}
+            style={{ marginTop: '0em', padding: '0.75em' }}
             onClick={postOrder} // Replace with actual checkout logic <--- Placeholder - replace with actual checkout logic --
           >
             <strong>Checkout</strong>
